@@ -5,6 +5,7 @@ import "./interface/IItem.sol";
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 contract Character is ERC721 {
    //event Transfer(address indexed _from, address indexed to, uint256 tokenID);
+   uint8 constant private MAX_EQUIPMENT_SLOTS = 6;
    uint256 private _tokenID;
    event Equipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
    event Unequipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
@@ -18,8 +19,8 @@ contract Character is ERC721 {
        // 3: right hand
        // 4: feet
        // 5: comm device
-       address[6] equippedTo;
-       uint256[6] equipmentID;
+       address[MAX_EQUIPMENT_SLOTS] equippedTo;
+       uint256[MAX_EQUIPMENT_SLOTS] equipmentID;
    }
    mapping(uint256 => Equipment) internal _equipment;
    
@@ -38,6 +39,28 @@ contract Character is ERC721 {
        return _baseTokenURI;
    }
 
+
+   /**Only allow transfers if no items are unequipped**/
+   function transferFrom(address from, address to, uint256 tokenID) public override(ERC721) {
+       for (uint8 i = 0; i < MAX_EQUIPMENT_SLOTS; i++) {
+           require(true == isSlotEmpty(tokenID, i), "Item Equipped");
+       }
+       super.transferFrom(from, to, tokenID);
+   }
+
+   function safeTransferFrom(address from, address to, uint256 tokenID) public override(ERC721) {
+       for (uint8 i = 0; i < MAX_EQUIPMENT_SLOTS; i++) {
+           require(true == isSlotEmpty(tokenID, i), "Item Equipped");
+       }
+       super.safeTransferFrom(from, to, tokenID);
+   }
+
+   function safeTransferFrom(address from, address to, uint256 tokenID, bytes memory data) public override(ERC721) {
+       for (uint8 i = 0; i < MAX_EQUIPMENT_SLOTS; i++) {
+           require(true == isSlotEmpty(tokenID, i), "Item Equipped");
+       }
+       super.safeTransferFrom(from, to, tokenID, data);
+   }
 
    function equip(uint256 characterID, uint8 slotID, uint256 itemID) public {
        //Only allow Equipping via Item Contract and original character owner
