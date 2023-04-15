@@ -3,31 +3,32 @@ pragma solidity ^0.8.13;
 
 import "./interface/IItem.sol";
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+
+enum EquipmentSlot{Head, Chest, LeftHand, RightHand, Feet, CommDevice, Max}
 contract Character is ERC721 {
-   //event Transfer(address indexed _from, address indexed to, uint256 tokenID);
-   uint8 constant private MAX_EQUIPMENT_SLOTS = 6;
-   uint256 private _tokenID;
    event Equipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
    event Unequipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
-   string private _baseTokenURI;  
+   uint8 private constant MAX_EQUIPMENT_SLOTS = 6; //TODO: Possible to use enum here and keep static decleration for Equipment struct?
 
    struct Equipment {
-       //Equipment Slots:  TODO Define enum
-       // 0: head 
-       // 1: chest
-       // 2: left hand
-       // 3: right hand
-       // 4: feet
-       // 5: comm device
        address[MAX_EQUIPMENT_SLOTS] equippedTo;
        uint256[MAX_EQUIPMENT_SLOTS] equipmentID;
    }
    mapping(uint256 => Equipment) internal _equipment;
+   mapping (EquipmentSlot => string) internal _slotNames;
    
+   uint256 private _tokenID;
+   string private _baseTokenURI;  
 
    constructor(string memory name, string memory symbol, string memory baseTokenURI)
        ERC721(name, symbol) {
           _baseTokenURI = baseTokenURI;
+          _slotNames[EquipmentSlot.Head] =  "Head";
+          _slotNames[EquipmentSlot.Chest] = "Chest";
+          _slotNames[EquipmentSlot.LeftHand] = "Left Hand";
+          _slotNames[EquipmentSlot.RightHand] = "Right Hand";
+          _slotNames[EquipmentSlot.Feet] = "Feet";
+          _slotNames[EquipmentSlot.CommDevice] = "Comm Device";
    }
 
    function mint() public{
@@ -85,21 +86,9 @@ contract Character is ERC721 {
        return _equipment[characterID].equippedTo[slotID] == address(0);
    }
 
-   function slotName(uint8 slotID) public pure returns (string memory) { //TODO: This can just be a mapping
-       if (slotID == 0) {
-           return "HEAD";
-       } else if (1 == slotID) {
-           return "CHEST";
-       } else if (2 == slotID) { 
-           return "LEFT HAND";
-       } else if (3 == slotID) {
-           return "RIGHT HAND";
-       } else if (4 == slotID) {
-           return "LEGS";
-       } else if (5 == slotID) {
-           return "COMM";
-       }
-       revert("INVALID SLOTID");
+   function slotName(uint8 slot) public view returns (string memory) { 
+       require(slot < uint8(EquipmentSlot.Max), "Invalid Slot ID");
+       return _slotNames[EquipmentSlot(slot)];
   }
 
   function slotEquippedBy(uint256 characterID, uint8 slotID) public view returns (address) {

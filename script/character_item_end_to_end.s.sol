@@ -10,6 +10,7 @@ import "../src/Item.sol";
 contract CharacterScript is Script {
    function run() public {
        vm.startBroadcast(vm.envUint("FORGE_ANVIL_PRIVATE_KEY"));
+       uint8 commSlot = uint8(EquipmentSlot.CommDevice);
        Character character = Character(vm.envAddress("CHARACTER_CONTRACT_ADDRESS"));
        Item comm = Item(vm.envAddress("ITEM_CONTRACT_ADDRESS"));
        
@@ -37,7 +38,7 @@ contract CharacterScript is Script {
 
        console.log("Checking slot");
 
-       bool slotAvail = character.isSlotEmpty(0, 5);
+       bool slotAvail = character.isSlotEmpty(0, commSlot);
        console.log("Slot Empty: ", slotAvail);
        
        if (true == slotAvail) {
@@ -55,12 +56,13 @@ contract CharacterScript is Script {
    }
 
    function printEquipmentInfo(Character character, Item item) public view {
-       bool slotAvail = character.isSlotEmpty(0,5);
-       console.log("Slot 5 (%s) Empty: %s", character.slotName(5), slotAvail);
+       uint8 commSlot = uint8(EquipmentSlot.CommDevice);
+       bool slotAvail = character.isSlotEmpty(0,commSlot);
+       console.log("Slot 5 (%s) Empty: %s", character.slotName(commSlot), slotAvail);
        if (slotAvail) {
            return;
        }
        console.log("%s equipped to: ", item.name(), item.equippedTo(0));
-       console.log("Character %s slot equipped by: %s", character.slotName(5), character.slotEquippedBy(0, 5)); 
+       console.log("Character %s slot equipped by: %s", character.slotName(commSlot), character.slotEquippedBy(0, commSlot)); 
    }
 }
