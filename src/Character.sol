@@ -2,18 +2,17 @@
 pragma solidity ^0.8.13;
 
 import "./interface/IItem.sol";
-contract Character {
-   event Transfer(address indexed _from, address indexed to, uint256 tokenID);
+import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+contract Character is ERC721 {
+   //event Transfer(address indexed _from, address indexed to, uint256 tokenID);
+   uint256 private _tokenID;
    event Equipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
    event Unequipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
-   uint256 _tokenID;
-   mapping (uint256 => address)  internal _idToOwner;
-   mapping (uint256 => string)  internal _idToTokenURI;
-   mapping (address => uint256) internal _balance;
+   string private _baseTokenURI;  
 
    struct Equipment {
-       //Equipment Slots: 
-       // 0: head
+       //Equipment Slots:  TODO Define enum
+       // 0: head 
        // 1: chest
        // 2: left hand
        // 3: right hand
@@ -24,14 +23,10 @@ contract Character {
    }
    mapping(uint256 => Equipment) internal _equipment;
    
-   string  public name;
-   string  public symbol; 
-   string  private tokenURIBase;
 
-   constructor(string memory _name, string memory _symbol, string memory _tokenURIBase)  {
-       name = _name;
-       symbol = _symbol;
-       tokenURIBase = _tokenURIBase;
+   constructor(string memory name, string memory symbol, string memory baseTokenURI)
+       ERC721(name, symbol) {
+          _baseTokenURI = baseTokenURI;
    }
 
    function mint() public{
@@ -39,29 +34,10 @@ contract Character {
        _tokenID++;
    }
 
-   function _mint(address to, uint256 tokenID) private {
-       require(to != address(0), "ZERO ADDRESS");
-       _idToOwner[tokenID] = to;
-       _balance[to]+=1;
-       _idToTokenURI[tokenID] = string.concat(tokenURIBase, uint2str(tokenID));
-       emit Transfer(address(0), to, tokenID);
+   function _baseURI() internal view override(ERC721) returns (string memory) {
+       return _baseTokenURI;
    }
 
-   function ownerOf(uint256 tokenID) public view returns (address owner) {
-           owner = _idToOwner[tokenID];
-           require(owner != address(0), "INVALID NFT");
-           return owner;
-   }
-
-   function balanceOf(address owner) public view returns (uint256 balance) {
-       return _balance[owner];
-   }
-
-   function tokenURI(uint256 tokenID) public view returns (string memory) {
-           string memory _tokenURI = _idToTokenURI[tokenID];
-           require(bytes(_tokenURI).length != 0, "INVALID NFT");
-           return _tokenURI;
-   }
 
    function equip(uint256 characterID, uint8 slotID, uint256 itemID) public {
        //Only allow Equipping via Item Contract and original character owner
@@ -86,7 +62,7 @@ contract Character {
        return _equipment[characterID].equippedTo[slotID] == address(0);
    }
 
-   function slotName(uint8 slotID) public pure returns (string memory) {
+   function slotName(uint8 slotID) public pure returns (string memory) { //TODO: This can just be a mapping
        if (slotID == 0) {
            return "HEAD";
        } else if (1 == slotID) {
@@ -112,29 +88,5 @@ contract Character {
        require(false == isSlotEmpty(characterID, slotID), "Slot Not Equipped");
        return _equipment[characterID].equipmentID[slotID];
   }
-
-
-
-   function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint k = len;
-        while (_i != 0) {
-            k = k-1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
-    }
 
 }
