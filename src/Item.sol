@@ -22,6 +22,22 @@ contract Item is ERC721{
        return _baseTokenURI;
    }
 
+   /**Only allow transfers if item is not equipped**/
+   function transferFrom(address from, address to, uint256 tokenID) public override(ERC721) {
+       require(false == isEquipped(tokenID), "Item Equipped");
+       super.transferFrom(from, to, tokenID);
+   }
+
+   function safeTransferFrom(address from, address to, uint256 tokenID) public override(ERC721) {
+       require(false == isEquipped(tokenID), "Item Equipped");
+       super.safeTransferFrom(from, to, tokenID);
+   }
+
+   function safeTransferFrom(address from, address to, uint256 tokenID, bytes memory data) public override(ERC721) {
+       require(false == isEquipped(tokenID), "Item Equipped");
+       super.safeTransferFrom(from, to, tokenID, data);
+   }
+
    function equip(address character, uint256 charID, uint256 itemID) public {
            require(msg.sender == _ownerOf(itemID), "Invalid owner");
            require(false == isEquipped(itemID), "Already equipped");
