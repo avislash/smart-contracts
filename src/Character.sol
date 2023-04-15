@@ -5,6 +5,7 @@ import "./interface/IItem.sol";
 contract Character {
    event Transfer(address indexed _from, address indexed to, uint256 tokenID);
    event Equipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
+   event Unequipped(address indexed _item, uint256 indexed slotID, uint256 indexed itemID);
    uint256 _tokenID;
    mapping (uint256 => address)  internal _idToOwner;
    mapping (uint256 => string)  internal _idToTokenURI;
@@ -21,7 +22,7 @@ contract Character {
        address[6] equippedTo;
        uint256[6] equipmentID;
    }
-   mapping(address => Equipment) internal _equipment;
+   mapping(uint256 => Equipment) internal _equipment;
    
    string  public name;
    string  public symbol; 
@@ -63,16 +64,26 @@ contract Character {
    }
 
    function equip(uint256 characterID, uint8 slotID, uint256 itemID) public {
-       require (tx.origin == _idToOwner[characterID], "Invalid owner");
-       require(true == isSlotEmpty(tx.origin, slotID), "Slot Already Equipped");
+       //Only allow Equipping via Item Contract and original character owner
+       require(true == isSlotEmpty(characterID, slotID), "Slot Already Equipped");
        require(false == IItem(msg.sender).isEquipped(itemID), "Item Already Equipped");
-       _equipment[tx.origin].equippedTo[slotID] = msg.sender;
-       _equipment[tx.origin].equipmentID[slotID] = itemID;
+       _equipment[characterID].equippedTo[slotID] = msg.sender;
+       _equipment[characterID].equipmentID[slotID] = itemID;
        emit Equipped(msg.sender, slotID, itemID);
    }
 
-   function isSlotEmpty(address owner, uint8 slotID) public view returns (bool) {
-       return _equipment[owner].equippedTo[slotID] == address(0);
+   function unequip(uint256 characterID, uint8 slotID, uint256 itemID) public {
+       //Only alow allow Unequipping via Item Contract
+       require(itemID == _equipment[characterID].equipmentID[slotID], "Invalid Item ID");
+       require(msg.sender == slotEquippedBy(characterID, slotID), "Invalid Item");
+       require(true == IItem(msg.sender).isEquipped(itemID), "Item not equipped");
+       _equipment[characterID].equippedTo[slotID] = address(0);
+       _equipment[characterID].equipmentID[slotID] = 0;
+       emit Unequipped(msg.sender, slotID, itemID);
+   }
+
+   function isSlotEmpty(uint256 characterID, uint8 slotID) public view returns (bool) {
+       return _equipment[characterID].equippedTo[slotID] == address(0);
    }
 
    function slotName(uint8 slotID) public pure returns (string memory) {
@@ -92,14 +103,14 @@ contract Character {
        revert("INVALID SLOTID");
   }
 
-  function slotEquippedBy(address owner, uint8 slotID) public view returns (address) {
-       require(false == isSlotEmpty(owner, slotID), "Slot Not Equipped");
-       return _equipment[owner].equippedTo[slotID];
+  function slotEquippedBy(uint256 characterID, uint8 slotID) public view returns (address) {
+       require(false == isSlotEmpty(characterID, slotID), "Slot Not Equipped");
+       return _equipment[characterID].equippedTo[slotID];
   }
 
-  function slotEquipmentID(address owner, uint8 slotID) public view returns (uint256) {
-       require(false == isSlotEmpty(owner, slotID), "Slot Not Equipped");
-       return _equipment[owner].equipmentID[slotID];
+  function slotEquipmentID(uint256 characterID, uint8 slotID) public view returns (uint256) {
+       require(false == isSlotEmpty(characterID, slotID), "Slot Not Equipped");
+       return _equipment[characterID].equipmentID[slotID];
   }
 
 

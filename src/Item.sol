@@ -56,6 +56,12 @@ contract Item {
            _itemEquippedTo[itemID] = character;
    }
 
+   function unequip(address character, uint256 charID, uint256 itemID) public {
+           require(msg.sender == _idToOwner[itemID], "Invalid owner");
+           ICharacter(character).unequip(charID, _slotID, itemID);
+           _itemEquippedTo[itemID] = address(0);
+   }
+
    function isEquipped(uint256 itemID) public view returns (bool) {
        return _itemEquippedTo[itemID] != address(0);
    }
