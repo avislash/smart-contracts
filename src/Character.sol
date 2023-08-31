@@ -62,7 +62,9 @@ contract Character is ERC721 {
        }
        super.safeTransferFrom(from, to, tokenID, data);
    }
-
+   //TODO: Add an authorize such that the user can approve item contracts to call equip/unequip. 
+   //This will allow any item contract to interact with the character while also preventing unauthorized
+   //item contracts from equipping
    function equip(uint256 characterID, uint8 slotID, uint256 itemID) public {
        //Only allow Equipping via Item Contract and original character owner
        require(true == isSlotEmpty(characterID, slotID), "Slot Already Equipped");
